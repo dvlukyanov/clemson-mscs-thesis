@@ -1,0 +1,16 @@
+server:
+    ip: '127.0.0.1'
+    port: 12345
+
+client:
+    qnt: 10
+
+storage:
+    data:
+        path: 'data'
+    model:
+        path: 'model'
+        prefix: 'model_server_'
+        name: 'model_server_{}.pt'
+
+seed: 12345
