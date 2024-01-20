@@ -1,0 +1,19 @@
+server:
+    address: '127.0.0.1'
+    port: 12345
+
+client:
+    qnt: 1
+    training:
+        epochs_per_iteration: 1
+
+storage:
+    data:
+        path: 'data'
+    model:
+        path: 'model'
+        name:
+            server: 'model_server_{}.pt' # {0} - iteration
+            client: 'model_client_{}_{}.pt' # {0} - iteration, {1} - client id
+
+seed: 12345
