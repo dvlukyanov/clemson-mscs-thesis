@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '../')
 import os
 import random
 import pickle as pkl
@@ -6,8 +8,9 @@ from torch.utils.data import DataLoader
 import asyncio
 import yaml
 from enum import Enum
-from fedavg_model import SimpleCNN
-from fedavg_data import ImageDataset, transform
+from model.simple_cnn import SimpleCNN
+# from fedavg_data import ImageDataset, transform
+from util.dataload import ImageDataset, transform
 
 
 # init config
@@ -104,7 +107,7 @@ class Control:
     def test(self, model):
         data_file = open(os.path.join(config['storage']['data']['path'], 'test.pkl'), 'rb')
         data = pkl.load(data_file)
-        test_dataset = ImageDataset(data, transform)
+        test_dataset = ImageDataset(data, config['seed'], transform)
         testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
         correct = 0

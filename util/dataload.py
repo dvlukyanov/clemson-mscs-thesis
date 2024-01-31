@@ -1,15 +1,6 @@
 import random
-import yaml
 import torch
 from torchvision import transforms
-
-
-with open('fedavg_config.yaml', 'r') as file:
-    config = yaml.safe_load(file)
-
-
-random.seed(config['seed'])
-
 
 transform = transforms.Compose([
     transforms.ToTensor()
@@ -17,8 +8,9 @@ transform = transforms.Compose([
 
 
 class ImageDataset(torch.utils.data.Dataset):
-    def __init__(self, data, transform=None):
+    def __init__(self, data, seed, transform=None):
         tuples = [(image, label) for label in data.keys() for image in data[label]]
+        random.seed(seed)
         random.shuffle(tuples)
         self.data, self.labels = zip(*tuples)
         self.transform = transform

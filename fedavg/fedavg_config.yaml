@@ -3,15 +3,15 @@ server:
     port: 12345
 
 client:
-    qnt: 1
+    qnt: 2
     training:
         epochs_per_iteration: 1
 
 storage:
     data:
-        path: '../data'
+        path: '../storage/data'
     model:
-        path: '../model'
+        path: '../storage/model'
         name:
             server: 'model_server_{}.pt' # {0} - iteration
             client: 'model_client_{}_{}.pt' # {0} - iteration, {1} - client id

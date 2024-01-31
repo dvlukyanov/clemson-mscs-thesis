@@ -1,4 +1,5 @@
 import sys
+sys.path.insert(0, '../')
 import os
 import random
 import pickle as pkl
@@ -7,8 +8,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from fedavg_model import SimpleCNN
-from fedavg_data import ImageDataset, transform
+from model.simple_cnn import SimpleCNN
+# from fedavg_data import ImageDataset, transform
+from util.dataload import ImageDataset, transform
 import asyncio
 
 
@@ -45,12 +47,12 @@ def trainModel(model, client_id):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
-
+    
     data_file = open(os.path.join(config['storage']['data']['path'], f'partition_{client_id}.pkl'), 'rb')
     data = pkl.load(data_file)
-
-    train_dataset = ImageDataset(data['train'], transform)
-    test_dataset = ImageDataset(data['test'], transform)
+    
+    train_dataset = ImageDataset(data['train'], config['seed'], transform)
+    test_dataset = ImageDataset(data['test'], config['seed'], transform)
 
     trainloader = DataLoader(train_dataset, batch_size=64, shuffle=False)
     testloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
