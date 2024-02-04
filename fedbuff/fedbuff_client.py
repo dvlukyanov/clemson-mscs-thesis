@@ -2,23 +2,26 @@ import sys
 sys.path.insert(0, '../')
 import os
 import random
-import yaml
-from util.message import Message
-import json
-from util.json_encoder import MessageEncoder
 import pickle as pkl
-from model.simple_cnn import SimpleCNN
-from util.dataload import ImageDataset, transform
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import asyncio
+import yaml
+from util.message import Message
+from response import Response
+import json
+from util.json_encoder import MessageEncoder
+from enum import Enum
+from model.simple_cnn import SimpleCNN
+from util.dataload import ImageDataset, transform
+from copy import deepcopy
 
 
 # init config
 
-with open('hierfavg_config.yaml', 'r') as file:
+with open('fedbuff_config.yaml', 'r') as file:
     config = yaml.safe_load(file)
 
 random.seed(config['seed'])
@@ -31,38 +34,67 @@ torch.backends.cudnn.benchmark = False
 
 # classes
 
-class Edge():
-    def __init__(self, id, address, port):
-        self.id = id
+class Server():
+    def __init__(self, address, port):
         self.address = address
         self.port = port
-        pass
 
-    async def init(self):
-        self.reader, self.writer = await asyncio.open_connection(self.address, self.port + self.id)
-        print(f"Client {self.id} connected to edge {self.address}:{self.port + self.id}")
+    async def connect(self):
+        self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
 
     async def notify(self, client_id, model_name, iteration):
         message = Message(client_id, model_name, iteration)
         body = json.dumps(message, cls=MessageEncoder)
         self.writer.write(body.encode('utf-8'))
         await self.writer.drain()
-        print(f"Edge {self.id} notified by client {client_id}: {body}")
+        print(f"Client {client_id} notified server: {body}")
+
+    async def listen(self):
+        body = None
+        while body is None:
+            body = (await self.reader.read(100)).decode('utf-8')
+        body = json.loads(body)
+        response = Response(**body)
+        print(f"Received from server: {response}")
+        return response
 
 
 class Client():
-    def __init__(self, id, edge, device):
+    def __init__(self, id, blueprint, device):
         self.id = id
         self.device = device
-        self.model = SimpleCNN().to(device)
+        self.blueprint = blueprint
         self.iteration = 1
-        self.edge = edge
-        print(f"Client {self.id} initialized")
+        print(f"Client {self.id} initialized with {self.blueprint.__class__.__name__} model")
 
-    def load_model(self, model_name=None):
-        model_name = model_name if model_name else config['storage']['model']['name']['cloud'].format(self.iteration - 1)
+    async def init(self, address, port):
+        self.server = Server(address, port)
+        await self.server.connect()
+        print(f"Client {self.id} connected to server {self.server.address}:{self.server.port}")
+
+    async def run(self):
+        model_name = None
+        while True:
+            model_name = model_name if model_name else self.find_latest_model()
+            self.load_model(model_name)
+            self.train_model()
+            model_name = self.save_model()
+            await self.server.notify(self.id, model_name, self.iteration)
+            response = await self.server.listen()
+            if response.reload:
+                model_name = response.model_name
+            self.increment_iteration()
+
+    def find_latest_model(self):
+        model_names = os.listdir(config['storage']['model']['path'])
+        model_names = [name for name in model_names if name.startswith(config['storage']['model']['name']['server'].split('_')[0])]
+        model_names = sorted(model_names, key=lambda name: int((name.split('_')[-1]).split('.')[0]))
+        print(f"Latest model: {model_names[-1]}")
+        return model_names[-1]
+
+    def load_model(self, model_name):
         model_path = os.path.join(config['storage']['model']['path'], model_name)
-        model = SimpleCNN().to(self.device)
+        model = deepcopy(self.blueprint).to(self.device)
         model.load_state_dict(torch.load(model_path))
         model.eval()
         self.model = model
@@ -121,7 +153,7 @@ class Client():
 
             scheduler.step()
             
-        print(f'Iteration is completed')
+        print(f'Iteration {self.iteration} is completed')
 
     def save_model(self):
         model_name = config['storage']['model']['name']['client'].format(self.iteration, self.id)
@@ -129,33 +161,21 @@ class Client():
         torch.save(self.model.state_dict(), model_path)
         print(f'Model {model_path} saved')
         return model_name
-
-    async def listen(self):
-        message = None
-        while message is None or (message.startswith("model_edge") is False and message.startswith("model_cloud") is False):
-            message = (await self.edge.reader.read(100)).decode('utf-8')
-        print(f"Received from edge {self.edge.id}: {message}")
-        return message
-
+    
     def increment_iteration(self):
         self.iteration += 1
+        print(f"Iteration incremented to {self.iteration}")
 
+
+# launch
 
 async def main():
     try:
-        edge = Edge(int(sys.argv[2]), config['edge']['address'], config['edge']['port'])
-        await edge.init()
-        client = Client(sys.argv[1], edge, device)
-        edge_model_name = None
-        while True:
-            client.load_model(edge_model_name)
-            client.train_model()
-            model_name = client.save_model()
-            await client.edge.notify(client.id, model_name, client.iteration)
-            edge_model_name = await client.listen()
-            client.increment_iteration()
+        client = Client(int(sys.argv[1]), SimpleCNN(), device)
+        await client.init(config['server']['address'], config['server']['port'])
+        await client.run()
     except Exception as e:
-        print(f"Error connecting to the edge: {e}")
+        print(f"Error: {e}")
 
 
 if __name__ == '__main__':

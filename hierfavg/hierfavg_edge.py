@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, '../')
 import yaml
 import json
-from message import Message
+from util.message import Message
 from util.json_encoder import MessageEncoder
 import pickle as pkl
 from enum import Enum

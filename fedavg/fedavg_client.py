@@ -9,7 +9,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from model.simple_cnn import SimpleCNN
-# from fedavg_data import ImageDataset, transform
 from util.dataload import ImageDataset, transform
 import asyncio
 

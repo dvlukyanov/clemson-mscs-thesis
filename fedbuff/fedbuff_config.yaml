@@ -1,6 +1,7 @@
 server:
     address: '127.0.0.1'
     port: 12345
+    buffer_size: 3
 
 client:
     qnt: 2
@@ -11,7 +12,7 @@ storage:
     data:
         path: '../storage/data'
     model:
-        path: '../storage/model/fedavg'
+        path: '../storage/model/fedbuff'
         name:
             server: 'model_server_{}.pt' # {0} - iteration
             client: 'model_client_{}_{}.pt' # {0} - iteration, {1} - client id

@@ -9,7 +9,6 @@ import asyncio
 import yaml
 from enum import Enum
 from model.simple_cnn import SimpleCNN
-# from fedavg_data import ImageDataset, transform
 from util.dataload import ImageDataset, transform
 
 

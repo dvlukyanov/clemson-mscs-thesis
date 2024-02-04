@@ -18,7 +18,7 @@ storage:
     data:
         path: '../storage/data'
     model:
-        path: '../storage/model'
+        path: '../storage/model/hierfavg'
         name:
             cloud: 'model_cloud_{0}.pt' # {0} - iteration
             edge: 'model_edge_{0}_{1}.pt' # {0} - iteration, {1} - edge id
