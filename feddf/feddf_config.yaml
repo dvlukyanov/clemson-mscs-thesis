@@ -1,0 +1,30 @@
+server:
+    address: '127.0.0.1'
+    port: 12345
+    knowledge_transfer:
+        client_qnt: 1
+        epochs: 5
+        temperature: 1
+        soft_target_loss_weight: 0.75
+        criterion_loss_weight: 0.25
+    target_training:
+        epochs: 10
+        temperature: 1
+        soft_target_loss_weight: 0.75
+        criterion_loss_weight: 0.25
+
+client:
+    qnt: 1
+    training:
+        epochs_per_iteration: 5
+
+storage:
+    data:
+        path: '../storage/data'
+    model:
+        path: '../storage/model/feddf'
+        name:
+            server: 'model_server_{0}.pt' # {0} - iteration
+            client: 'model_client_{0}_{1}.pt' # {0} - iteration, {1} - client id
+
+seed: 12345
