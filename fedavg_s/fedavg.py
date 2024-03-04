@@ -39,11 +39,11 @@ class FedAvg():
         print(self.accuracy)
 
     def train_client(self, client_id):
-        # random.seed(config['seed'])
-        # torch.manual_seed(config['seed'])
-        # torch.cuda.manual_seed(config['seed'])
-        # torch.backends.cudnn.deterministic = True
-        # torch.backends.cudnn.benchmark = False
+        random.seed(config['seed'])
+        torch.manual_seed(config['seed'])
+        torch.cuda.manual_seed(config['seed'])
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
         model = self.load_model(self.config['storage']['model']['name']['server'].format(self.round))
 

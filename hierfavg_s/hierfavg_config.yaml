@@ -1,0 +1,25 @@
+cloud:
+    epochs: 200
+
+edge:
+    qnt: 3
+    training:
+        iterations: 10
+
+client:
+    qnt: 3
+    training:
+        epochs: 5
+        batch_size: 20
+
+storage:
+    data:
+        path: '../storage/data'
+    model:
+        path: '../storage/model/hierfavg'
+        name:
+            cloud: 'model_cloud_{0}.pt' # {0} - round
+            edge: 'model_edge_{0}_{1}_{2}.pt' # {0} - round, {1} - iteration, {1} - edge id
+            client: 'model_client_{0}_{1}_{2}.pt' # {0} - round, {1} - iteration,  {2} - client id
+
+seed: 12345
