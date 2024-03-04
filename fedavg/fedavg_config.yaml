@@ -1,11 +1,12 @@
 server:
-    address: '127.0.0.1'
-    port: 12345
+    epochs: 100
 
 client:
-    qnt: 2
+    qnt: 5
+    chosen: 3
     training:
-        epochs_per_iteration: 1
+        epochs: 5
+        batch_size: 20
 
 storage:
     data:
