@@ -1,16 +1,16 @@
 server:
-    epochs: 100
+    epochs: 200
 
 client:
-    qnt: 5
+    qnt: 20
     chosen: 3
     training:
-        epochs: 5
-        batch_size: 20
+        epochs: 3
+        batch_size: 64
 
 storage:
     data:
-        path: '../storage/data'
+        path: '../storage/data2'
     model:
         path: '../storage/model/fedavg'
         name:

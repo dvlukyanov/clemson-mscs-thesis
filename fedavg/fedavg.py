@@ -21,17 +21,20 @@ class FedAvg():
         self.rng = random.Random()
         self.rng.seed(self.config['seed'])
         self.round = 0
+        self.clients = None
         self.model = ModelFactory.create(self.model_type, self.device, self.config['seed'])
         self.save_model(self.model, self.config['storage']['model']['name']['server'].format(self.round))
         self.accuracy = {}
 
     def train(self):
         for _ in range(math.ceil(self.config['server']['epochs'] / self.config['client']['training']['epochs'])):
-            for client_id in range(1, self.config['client']['qnt'] + 1):
+            self.clients = self.rng.sample(range(1, self.config['client']['qnt'] + 1), self.config['client']['chosen'])
+            print(f'Chosen: {self.clients}')
+            for client_id in self.clients:
                 model = self.train_client(client_id)
                 self.save_model(model, config['storage']['model']['name']['client'].format(self.round + 1, client_id))
             self.increment_round()
-            self.test_clients_average()
+            # self.test_clients_average()
             self.model = self.aggregate()
             [epochs, accuracy] = self.test_aggregated(self.model)
             self.accuracy[epochs] = accuracy
@@ -48,8 +51,10 @@ class FedAvg():
         model = self.load_model(self.config['storage']['model']['name']['server'].format(self.round))
 
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
+        # optimizer = optim.Adam(model.parameters(), lr=0.0007, weight_decay=0.001)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.11)
+        optimizer = model.optimizer(model)
+        scheduler = model.scheduler(optimizer)
 
         data_file = open(os.path.join(config['storage']['data']['path'], f'partition_{client_id}.pkl'), 'rb')
         data = pkl.load(data_file)
@@ -101,10 +106,7 @@ class FedAvg():
         return model
 
     def aggregate(self):
-        print("Random seed:", self.rng.getstate())
-        chosen = self.rng.sample(range(1, self.config['client']['qnt'] + 1), self.config['client']['chosen'])
-        print(f'Chosen: {chosen}')
-        states = [self.load_model(config['storage']['model']['name']['client'].format(self.round, client_id)).state_dict() for client_id in chosen]
+        states = [self.load_model(config['storage']['model']['name']['client'].format(self.round, client_id)).state_dict() for client_id in self.clients]
         model = ModelFactory.create(self.model_type, self.device)
         state = {}
         for key in states[0].keys():
@@ -115,7 +117,7 @@ class FedAvg():
 
     def test_clients_average(self):
         performance = []
-        for client_id in range(1, self.config['client']['qnt'] + 1):
+        for client_id in self.clients:
             model_name = config['storage']['model']['name']['client'].format(self.round, client_id)
             model = self.load_model(model_name)
             [total, correct] = self.test(model)
